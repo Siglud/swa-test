@@ -20,8 +20,6 @@ interface Response {
   body: { [key: string]: any };
 }
 
-type TeamsfxContext = { [key: string]: any };
-
 /**
  * This function handles requests from teamsfx client.
  * The HTTP request should contain an SSO token queried from Teams in the header.
@@ -42,8 +40,7 @@ type TeamsfxContext = { [key: string]: any };
  */
 export default async function run(
   context: Context,
-  req: HttpRequest,
-  teamsfxContext: TeamsfxContext
+  req: HttpRequest
 ): Promise<Response> {
   context.log("HTTP trigger function processed a request.");
 
@@ -57,7 +54,15 @@ export default async function run(
   res.body.receivedHTTPRequestBody = req.body || "";
 
   // Prepare access token.
-  const accessToken: string = teamsfxContext["AccessToken"];
+  if (!req.headers["authorization"]) {
+    return {
+      status: 400,
+      body: {
+        error: "No access token was found in request header.",
+      },
+    };
+  }
+  const accessToken: string = req.headers["authorization"].replace("Bearer ", "");
   if (!accessToken) {
     return {
       status: 400,
@@ -102,10 +107,12 @@ export default async function run(
     return {
       status: 400,
       body: {
-        error: "Access token is invalid.",
+        error: "Access token is invalid." + e,
       },
     };
   }
+
+  return res; /*
 
   // Create a graph client with default scope to access user's Microsoft 365 data after user has consented.
   try {
@@ -127,12 +134,12 @@ export default async function run(
       status: 500,
       body: {
         error:
-          "Failed to retrieve user profile from Microsoft Graph. The application may not be authorized.",
+          "Failed to retrieve user profile from Microsoft Graph. The application may not be authorized." + e,
       },
     };
   }
 
-  return res;
+  return res;*/
 }
 
 // You can replace the codes above from the function body with comment "Query user's information from the access token." to the end
