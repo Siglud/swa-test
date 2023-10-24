@@ -2,7 +2,7 @@ import { useContext, useState } from "react";
 import { Button, Spinner } from "@fluentui/react-components";
 import { useData } from "@microsoft/teamsfx-react";
 import * as axios from "axios";
-import { BearerTokenAuthProvider, createApiClient, TeamsUserCredential } from "@microsoft/teamsfx";
+import { TeamsUserCredential } from "@microsoft/teamsfx";
 import { TeamsFxContext } from "../Context";
 import config from "./lib/config";
 
@@ -12,11 +12,13 @@ async function callFunction(teamsUserCredential: TeamsUserCredential) {
   try {
     const apiBaseUrl = config.apiEndpoint + "/api/";
     // createApiClient(...) creates an Axios instance which uses BearerTokenAuthProvider to inject token to request header
-    const apiClient = createApiClient(
-      apiBaseUrl,
-      new BearerTokenAuthProvider(async () => (await teamsUserCredential.getToken(""))!.token)
-    );
-    const response = await apiClient.get(functionName);
+    const token: string = (await teamsUserCredential.getToken(""))!.token;
+    const apiClient = axios.default.create();
+    const response = await apiClient.get(apiBaseUrl + functionName, {
+      headers: {
+        "x-teams-accesstoken": token,
+      }
+    });
     return response.data;
   } catch (err: unknown) {
     if (axios.default.isAxiosError(err)) {
