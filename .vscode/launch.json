@@ -5,7 +5,7 @@
             "name": "Attach to Local Service",
             "type": "node",
             "request": "attach",
-            "port": 9239,
+            "port": 9229,
             "restart": true,
             "presentation": {
                 "group": "all",
@@ -150,7 +150,8 @@
         {
             "name": "Debug in Teams (Edge)",
             "configurations": [
-                "Attach to Frontend in Teams (Edge)"
+                "Attach to Frontend in Teams (Edge)",
+                "Attach to Local Service"
             ],
             "preLaunchTask": "Start Teams App Locally",
             "presentation": {

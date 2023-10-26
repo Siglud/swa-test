@@ -3,12 +3,44 @@ import { OnBehalfOfCredentialAuthConfig, OnBehalfOfUserCredential, UserInfo } fr
 import config from "../../config";
 import { TokenCredentialAuthenticationProvider } from "@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials";
 import { Client } from "@microsoft/microsoft-graph-client";
+import * as jwt from "jsonwebtoken";
+import * as jwksClient from "jwks-rsa";
+
+function validateJwt(token: string): Promise<jwt.JwtPayload> {
+
+    const getSigningKeys = (header: jwt.JwtHeader, callback: jwt.SigningKeyCallback) => {
+        var client = jwksClient({
+            jwksUri: `https://login.microsoftonline.com/${config.tenantId}/discovery/v2.0/keys`,
+        });
+
+        client.getSigningKey(header.kid, function (err, key: jwksClient.SigningKey) {
+            var signingKey = key.getPublicKey();
+            callback(null, signingKey);
+        });
+    }
+
+    const validationOptions = {
+        audience: config.clientId,
+        issuer: `https://login.microsoftonline.com/${config.tenantId}/v2.0`
+    };
+    return new Promise((resolve, _) => {
+        jwt.verify(token, getSigningKeys, validationOptions, (err, decoded) => {
+            if (err) {
+                resolve(null);
+            }
+            resolve(decoded as jwt.JwtPayload);
+        });
+    });
+    
+}
 
 export async function getUserProfile(req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     // Initialize response.
     const res: HttpResponseInit = {
         status: 200
     };
+
+    res.cookies = [{name: "myCookie", value: "cookieValue"}];
 
     const body = Object();
 
@@ -22,6 +54,16 @@ export async function getUserProfile(req: HttpRequest, context: InvocationContex
             status: 400,
             body: JSON.stringify({
                 error: "No access token was found in request header.",
+            }),
+        };
+    }
+
+    const validate = await validateJwt(accessToken);
+    if (!validate) {
+        return {
+            status: 401,
+            body: JSON.stringify({
+                error: "Access token is invalid.",
             }),
         };
     }

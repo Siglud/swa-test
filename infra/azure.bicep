@@ -22,7 +22,7 @@ resource swa 'Microsoft.Web/staticSites@2022-09-01' = {
   properties:{}
 }
 
-resource symbolicname 'Microsoft.Web/staticSites/config@2022-09-01' = {
+resource changeSwaSetting 'Microsoft.Web/staticSites/config@2022-09-01' = {
   name: 'appsettings'
   kind: 'string'
   parent: swa
